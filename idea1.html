@@ -141,16 +141,6 @@ void draw()
       textAlign(CENTER, CENTER);
       textSize(10);
       text(sections[i], labelX, labelY);
-      
-      // Show currently selected letter if this section is active
-      if (i == selectedSection && millis() - lastTapTime < tapTimeout)
-      {
-        String chars = sections[i];
-        char currentChar = chars.charAt(tapCount % chars.length());
-        fill(255, 0, 0);
-        textSize(20);
-        text(String(currentChar).toUpperCase(), labelX, labelY);
-      }
     }
     
     // Center circle for space/delete - make it bigger for easier pressing
