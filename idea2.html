@@ -159,58 +159,88 @@ void draw()
           rect(startX + sizeOfInputArea/2, startY, sizeOfInputArea/2, sizeOfInputArea);
         }
         
-        // Draw labels
+        // Draw labels - smaller text
         fill(0);
         textAlign(CENTER, CENTER);
-        textSize(24);
+        textSize(14);
         text("SPACE", startX + sizeOfInputArea/4, startY + sizeOfInputArea/2);
         text("DELETE", startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/2);
       }
       else
       {
-        // Letter cell - arrange letters in a grid
+        // Letter cell - place letters in corners
         String chars = gridKeys[expandedCell];
         int numChars = chars.length();
-        int cols = (numChars == 4) ? 2 : (numChars == 3) ? 3 : numChars;
-        int rows = (numChars == 4) ? 2 : 1;
         
-        float letterWidth = sizeOfInputArea / cols;
-        float letterHeight = sizeOfInputArea / rows;
+        // Define positions for letters (corners)
+        float[][] positions;
+        if (numChars == 3)
+        {
+          // 3 letters: top-left, top-right, bottom-center
+          positions = new float[][] {
+            {startX + sizeOfInputArea/4, startY + sizeOfInputArea/4},           // top-left
+            {startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/4},         // top-right
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea*3/4}          // bottom-center
+          };
+        }
+        else if (numChars == 4)
+        {
+          // 4 letters: all four corners
+          positions = new float[][] {
+            {startX + sizeOfInputArea/4, startY + sizeOfInputArea/4},           // top-left
+            {startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/4},         // top-right
+            {startX + sizeOfInputArea/4, startY + sizeOfInputArea*3/4},         // bottom-left
+            {startX + sizeOfInputArea*3/4, startY + sizeOfInputArea*3/4}        // bottom-right
+          };
+        }
+        else
+        {
+          // 2 letters: top and bottom center
+          positions = new float[][] {
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea/4},
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea*3/4}
+          };
+        }
         
         hoveredLetter = -1;
+        float hitRadius = sizeOfInputArea/4; // radius for hit detection
         
         for (int i = 0; i < numChars; i++)
         {
-          int col = i % cols;
-          int row = i / cols;
-          float x = startX + col * letterWidth;
-          float y = startY + row * letterHeight;
+          float posX = positions[i][0];
+          float posY = positions[i][1];
           
-          // Draw letter box
-          fill(200, 220, 255);
-          rect(x, y, letterWidth, letterHeight);
+          // Check if this letter is hovered
+          float dx = mouseX - posX;
+          float dy = mouseY - posY;
+          float distance = sqrt(dx*dx + dy*dy);
           
-          // Highlight if hovered
-          if (mouseX >= x && mouseX < x + letterWidth &&
-              mouseY >= y && mouseY < y + letterHeight)
+          boolean isHovered = distance < hitRadius;
+          
+          if (isHovered)
           {
             hoveredLetter = i;
+            // Draw highlight circle
             fill(100, 255, 100, 150);
-            rect(x, y, letterWidth, letterHeight);
+            ellipse(posX, posY, hitRadius*1.8, hitRadius*1.8);
           }
+          
+          // Draw letter background circle
+          fill(200, 220, 255);
+          ellipse(posX, posY, hitRadius*1.5, hitRadius*1.5);
           
           // Draw border
           stroke(80);
           strokeWeight(3);
           noFill();
-          rect(x, y, letterWidth, letterHeight);
+          ellipse(posX, posY, hitRadius*1.5, hitRadius*1.5);
           noStroke();
           
           // Draw letter
           fill(0);
           textAlign(CENTER, CENTER);
-          textSize(40);
-          text(String(chars.charAt(i)).toUpperCase(), x + letterWidth/2, y + letterHeight/2);
+          textSize(35);
+          text(String(chars.charAt(i)).toUpperCase(), posX, posY);
         }
       }
     }
