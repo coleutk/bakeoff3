@@ -80,7 +80,7 @@ void draw()
   {
     fill(128);
     textAlign(CENTER);
-    text("Tap to multi-tap OR hold & drag to select letter!", width/2, 150);
+    text("Hold & drag to select letters!", width/2, 150);
     
     if (mousePressed && !wasPressed)
     {
@@ -102,7 +102,7 @@ void draw()
     fill(255);
     text("NEXT > ", 650, 650);
     
-    // Check for tap timeout
+    // Check for tap timeout - not needed anymore but keep for compatibility
     if (millis() - lastTapTime > tapTimeout && lastKeyPressed != -1)
     {
       lastKeyPressed = -1;
@@ -255,10 +255,8 @@ void draw()
           float x = startX + col * cellSize;
           float y = startY + row * cellSize;
           
-          // Highlight currently active key in green
-          if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout)
-            fill(100, 255, 100);
-          else if (index == 8) // Bottom right is special (space/delete)
+          // Light gray cells
+          if (index == 8) // Bottom right is special (space/delete)
             fill(255, 220, 150);
           else if ((row + col) % 2 == 0)
             fill(200);
@@ -301,16 +299,6 @@ void draw()
             textSize(9);
             text("SPACE", x + cellSize/2, y + cellSize/2 - 8);
             text("DELETE", x + cellSize/2, y + cellSize/2 + 8);
-          }
-          
-          // Show currently selected letter if this key is active
-          if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout && index < 8)
-          {
-            String chars = gridKeys[index];
-            char currentChar = chars.charAt(tapCount % chars.length());
-            fill(255, 0, 0);
-            textSize(28);
-            text(String(currentChar).toUpperCase(), x + cellSize/2, y + cellSize/2);
           }
         }
       }
@@ -379,13 +367,6 @@ void handleTouchEnd()
     
     expandedCell = -1;
     hoveredLetter = -1;
-    lastKeyPressed = -1;
-    tapCount = 0;
-  }
-  else
-  {
-    // Quick tap - use multi-tap mode
-    handleClick();
   }
   
   // Check next button
@@ -400,69 +381,7 @@ void handleTouchEnd()
 
 void handleClick()
 {
-  float startX = width/2 - sizeOfInputArea/2;
-  float startY = height/2 - sizeOfInputArea/2;
-  float cellSize = sizeOfInputArea / 3;
-  
-  // Check which cell was clicked
-  if (mouseX >= startX && mouseX < startX + sizeOfInputArea &&
-      mouseY >= startY && mouseY < startY + sizeOfInputArea)
-  {
-    int col = int((mouseX - startX) / cellSize);
-    int row = int((mouseY - startY) / cellSize);
-    int index = row * 3 + col;
-    
-    if (index == 8)
-    {
-      // Bottom-right cell: Space/Delete multi-tap
-      if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout)
-      {
-        tapCount++;
-        // Remove last character
-        if (currentTyped.length() > 0)
-          currentTyped = currentTyped.substring(0, currentTyped.length()-1);
-      }
-      else
-      {
-        tapCount = 0;
-        lastKeyPressed = index;
-      }
-      
-      lastTapTime = millis();
-      
-      // First tap = space, second tap = delete
-      if (tapCount % 2 == 0)
-      {
-        currentTyped += " ";
-      }
-      // Delete was already done above when removing last character
-    }
-    else
-    {
-      // Regular letter cell
-      // Check if this is same key as last press within timeout
-      if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout)
-      {
-        tapCount++;
-        // Remove last character
-        if (currentTyped.length() > 0)
-          currentTyped = currentTyped.substring(0, currentTyped.length()-1);
-      }
-      else
-      {
-        tapCount = 0;
-        lastKeyPressed = index;
-      }
-      
-      lastTapTime = millis();
-      
-      // Add appropriate character
-      String chars = gridKeys[index];
-      char charToAdd = chars.charAt(tapCount % chars.length());
-      currentTyped += charToAdd;
-    }
-  }
-  
+  // Just check next button - no multi-tap functionality
   if (didMouseClick(600, 600, 200, 200))
   {
     nextTrial();
