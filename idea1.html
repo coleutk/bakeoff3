@@ -108,35 +108,51 @@ void draw()
       float angle1 = i * TWO_PI / 9 - PI/2;
       float angle2 = (i + 1) * TWO_PI / 9 - PI/2;
       
-      // Highlight selected section
+      // Light gray color scheme
       if (i == selectedSection && mousePressed)
-        fill(100, 255, 100);
-      else if (i % 2 == 0)
-        fill(100, 150, 255);
+        fill(180, 255, 180); // Light green when selected
       else
-        fill(150, 200, 255);
+        fill(220); // Light gray
       
       // Draw pie slice
       arc(centerX, centerY, sizeOfInputArea, sizeOfInputArea, angle1, angle2, PIE);
       
-      // Draw text label
-      float labelAngle = (angle1 + angle2) / 2;
-      float labelX = centerX + cos(labelAngle) * radius * 0.6;
-      float labelY = centerY + sin(labelAngle) * radius * 0.6;
-      fill(0);
-      textAlign(CENTER, CENTER);
-      textSize(10);
-      text(sections[i], labelX, labelY);
+      // Draw black separating lines
+      stroke(0);
+      strokeWeight(2);
+      line(centerX, centerY, 
+           centerX + cos(angle1) * radius, 
+           centerY + sin(angle1) * radius);
+      noStroke();
+      
+      // Draw text label only if not currently holding in a section
+      if (!(mousePressed && selectedSection >= 0 && selectedSection < 9))
+      {
+        float labelAngle = (angle1 + angle2) / 2;
+        float labelX = centerX + cos(labelAngle) * radius * 0.6;
+        float labelY = centerY + sin(labelAngle) * radius * 0.6;
+        fill(0);
+        textAlign(CENTER, CENTER);
+        textSize(10);
+        text(sections[i], labelX, labelY);
+      }
     }
     
-    // Center circle for space/delete
-    fill(255, 200, 100);
-    ellipse(centerX, centerY, sizeOfInputArea/3.5, sizeOfInputArea/3.5);
+    // Center circle for space/delete - make it bigger for easier pressing
+    fill(255, 220, 150);
+    ellipse(centerX, centerY, sizeOfInputArea/2.5, sizeOfInputArea/2.5);
+    
+    // Draw a line to separate space and delete visually
+    stroke(0);
+    strokeWeight(2);
+    line(centerX, centerY - sizeOfInputArea/5, centerX, centerY + sizeOfInputArea/5);
+    noStroke();
+    
     fill(0);
     textAlign(CENTER, CENTER);
-    textSize(9);
-    text("SPACE", centerX, centerY - 8);
-    text("DELETE", centerX, centerY + 8);
+    textSize(10);
+    text("SPACE", centerX - sizeOfInputArea/10, centerY);
+    text("DELETE", centerX + sizeOfInputArea/10, centerY);
     
     // Show letter options when holding down in a section
     if (mousePressed && selectedSection >= 0 && selectedSection < 9)
@@ -149,7 +165,7 @@ void draw()
       float distance = sqrt(dx*dx + dy*dy);
       
       // Map distance to letter index
-      float innerRadius = sizeOfInputArea/3.5/2;
+      float innerRadius = sizeOfInputArea/2.5/2;
       float outerRadius = radius;
       
       if (distance > innerRadius && distance < outerRadius)
@@ -234,15 +250,19 @@ void handleRelease()
   if (distance < radius)
   {
     // Released in center - space or delete
-    if (distance < sizeOfInputArea/3.5/2)
+    if (distance < sizeOfInputArea/2.5/2)
     {
-      if (currentTyped.length() > 0)
+      // Check which side of center - left is space, right is delete
+      if (mouseX < centerX)
       {
-        currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+        currentTyped += " ";
       }
       else
       {
-        currentTyped += " ";
+        if (currentTyped.length() > 0)
+        {
+          currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+        }
       }
     }
     // Released in a section with a letter selected
