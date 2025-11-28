@@ -5,7 +5,7 @@
 </head>
 <body>
 
-<h1>Bakeoff 3 - Idea 2: Mini QWERTY Keyboard</h1>
+<h1>Bakeoff 3 - Idea 2: 3x3 Multi-Tap Grid</h1>
 
 <script type="text/processing" data-processing-target="mycanvas">
 
@@ -23,12 +23,13 @@ float errorsTotal = 0;
 String currentPhrase = "";
 String currentTyped = "";
 
-// Idea 2 Variables: Mini QWERTY keyboard layout
-String[][] keyboard = {
-  {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p"},
-  {"a", "s", "d", "f", "g", "h", "j", "k", "l"},
-  {"z", "x", "c", "v", "b", "n", "m"}
-};
+// Idea 2 Variables: 3x3 Grid with T9-style multi-tap
+String[] gridKeys = {"abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz", " "};
+String[] gridLabels = {"ABC", "DEF", "GHI", "JKL", "MNO", "PQRS", "TUV", "WXYZ", "SP/DEL"};
+int lastKeyPressed = -1;
+int tapCount = 0;
+float lastTapTime = 0;
+float tapTimeout = 800; // milliseconds between taps to reset
 boolean wasPressed = false;
 
 void setup()
@@ -75,7 +76,8 @@ void draw()
   {
     fill(128);
     textAlign(CENTER);
-    text("Tap letters to type!", width/2, 150);
+    text("Tap keys multiple times to cycle through letters!", width/2, 150);
+    text("Cell stays green while active", width/2, 170);
     
     if (mousePressed && !wasPressed)
     {
@@ -97,63 +99,74 @@ void draw()
     fill(255);
     text("NEXT > ", 650, 650);
     
-    // Draw mini QWERTY keyboard
-    float startX = width/2 - sizeOfInputArea/2;
-    float startY = height/2 - sizeOfInputArea/2;
-    
-    // Calculate key sizes - 4 rows total
-    float keyHeight = sizeOfInputArea / 5; // 5 rows: 3 letter rows + space + delete
-    
-    // Draw letter rows
-    for (int row = 0; row < 3; row++)
+    // Check for tap timeout
+    if (millis() - lastTapTime > tapTimeout && lastKeyPressed != -1)
     {
-      int numKeys = keyboard[row].length;
-      float keyWidth = sizeOfInputArea / numKeys;
-      float rowStartX = startX;
-      
-      if (row == 1) rowStartX = startX + keyWidth/4; // Offset middle row slightly
-      if (row == 2) rowStartX = startX + keyWidth/2; // Offset bottom row more
-      
-      for (int col = 0; col < numKeys; col++)
-      {
-        float x = rowStartX + col * keyWidth;
-        float y = startY + row * keyHeight;
-        
-        // Draw key background
-        fill(220);
-        stroke(80);
-        strokeWeight(1);
-        rect(x, y, keyWidth-2, keyHeight-2);
-        
-        // Draw letter
-        fill(0);
-        noStroke();
-        textAlign(CENTER, CENTER);
-        textSize(9);
-        text(keyboard[row][col].toUpperCase(), x + keyWidth/2, y + keyHeight/2);
-      }
+      lastKeyPressed = -1;
+      tapCount = 0;
     }
     
-    // Draw SPACE button (4th row)
-    float spaceY = startY + 3 * keyHeight;
-    fill(180, 220, 255);
-    stroke(80);
-    strokeWeight(1);
-    rect(startX, spaceY, sizeOfInputArea * 0.6, keyHeight-2);
-    fill(0);
-    noStroke();
-    textAlign(CENTER, CENTER);
-    textSize(10);
-    text("SPACE", startX + sizeOfInputArea * 0.3, spaceY + keyHeight/2);
+    // Draw 3x3 grid
+    float startX = width/2 - sizeOfInputArea/2;
+    float startY = height/2 - sizeOfInputArea/2;
+    float cellSize = sizeOfInputArea / 3;
     
-    // Draw DELETE button (4th row, right side)
-    fill(255, 180, 180);
-    stroke(80);
-    strokeWeight(1);
-    rect(startX + sizeOfInputArea * 0.6, spaceY, sizeOfInputArea * 0.4, keyHeight-2);
-    fill(0);
-    noStroke();
-    text("DEL", startX + sizeOfInputArea * 0.8, spaceY + keyHeight/2);
+    for (int row = 0; row < 3; row++)
+    {
+      for (int col = 0; col < 3; col++)
+      {
+        int index = row * 3 + col;
+        float x = startX + col * cellSize;
+        float y = startY + row * cellSize;
+        
+        // Highlight currently active key in green
+        if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout)
+          fill(100, 255, 100);
+        else if (index == 8) // Bottom right is special (space/delete)
+          fill(255, 220, 150);
+        else if ((row + col) % 2 == 0)
+          fill(200);
+        else
+          fill(230);
+        
+        rect(x, y, cellSize, cellSize);
+        
+        // Draw border
+        stroke(80);
+        strokeWeight(2);
+        noFill();
+        rect(x, y, cellSize, cellSize);
+        noStroke();
+        
+        // Draw all letters in the cell
+        fill(0);
+        textAlign(CENTER, CENTER);
+        
+        if (index < 8)
+        {
+          // Draw letters larger and spread out
+          textSize(16);
+          text(gridLabels[index], x + cellSize/2, y + cellSize/2);
+        }
+        else
+        {
+          // Special cell - Space/Delete
+          textSize(10);
+          text("SPACE", x + cellSize/2, y + cellSize/2 - 8);
+          text("DELETE", x + cellSize/2, y + cellSize/2 + 8);
+        }
+        
+        // Show currently selected letter if this key is active
+        if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout && index < 8)
+        {
+          String chars = gridKeys[index];
+          char currentChar = chars.charAt(tapCount % chars.length());
+          fill(255, 0, 0);
+          textSize(28);
+          text(String(currentChar).toUpperCase(), x + cellSize/2, y + cellSize/2);
+        }
+      }
+    }
     
     if (mousePressed && !wasPressed)
     {
@@ -173,60 +186,72 @@ void handleClick()
 {
   float startX = width/2 - sizeOfInputArea/2;
   float startY = height/2 - sizeOfInputArea/2;
-  float keyHeight = sizeOfInputArea / 5;
+  float cellSize = sizeOfInputArea / 3;
   
-  // Check which key was clicked
+  // Check which cell was clicked
   if (mouseX >= startX && mouseX < startX + sizeOfInputArea &&
       mouseY >= startY && mouseY < startY + sizeOfInputArea)
   {
-    // Check letter rows (first 3 rows)
-    for (int row = 0; row < 3; row++)
-    {
-      int numKeys = keyboard[row].length;
-      float keyWidth = sizeOfInputArea / numKeys;
-      float rowStartX = startX;
-      
-      if (row == 1) rowStartX = startX + keyWidth/4;
-      if (row == 2) rowStartX = startX + keyWidth/2;
-      
-      float y = startY + row * keyHeight;
-      
-      if (mouseY >= y && mouseY < y + keyHeight)
-      {
-        for (int col = 0; col < numKeys; col++)
-        {
-          float x = rowStartX + col * keyWidth;
-          if (mouseX >= x && mouseX < x + keyWidth)
-          {
-            currentTyped += keyboard[row][col];
-            return;
-          }
-        }
-      }
-    }
+    int col = int((mouseX - startX) / cellSize);
+    int row = int((mouseY - startY) / cellSize);
+    int index = row * 3 + col;
     
-    // Check SPACE and DELETE buttons (4th row)
-    float spaceY = startY + 3 * keyHeight;
-    if (mouseY >= spaceY && mouseY < spaceY + keyHeight)
+    if (index == 8)
     {
-      // Space button (left 60%)
-      if (mouseX < startX + sizeOfInputArea * 0.6)
+      // Bottom-right cell: Space/Delete multi-tap
+      if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout)
       {
-        currentTyped += " ";
-      }
-      // Delete button (right 40%)
-      else
-      {
+        tapCount++;
+        // Remove last character
         if (currentTyped.length() > 0)
           currentTyped = currentTyped.substring(0, currentTyped.length()-1);
       }
-      return;
+      else
+      {
+        tapCount = 0;
+        lastKeyPressed = index;
+      }
+      
+      lastTapTime = millis();
+      
+      // First tap = space, second tap = delete
+      if (tapCount % 2 == 0)
+      {
+        currentTyped += " ";
+      }
+      // Delete was already done above when removing last character
+    }
+    else
+    {
+      // Regular letter cell
+      // Check if this is same key as last press within timeout
+      if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout)
+      {
+        tapCount++;
+        // Remove last character
+        if (currentTyped.length() > 0)
+          currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+      }
+      else
+      {
+        tapCount = 0;
+        lastKeyPressed = index;
+      }
+      
+      lastTapTime = millis();
+      
+      // Add appropriate character
+      String chars = gridKeys[index];
+      char charToAdd = chars.charAt(tapCount % chars.length());
+      currentTyped += charToAdd;
     }
   }
   
   if (didMouseClick(600, 600, 200, 200))
   {
     nextTrial();
+    lastKeyPressed = -1;
+    tapCount = 0;
   }
 }
 
