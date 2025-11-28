@@ -31,6 +31,10 @@ int tapCount = 0;
 float lastTapTime = 0;
 float tapTimeout = 800; // milliseconds between taps to reset
 boolean wasPressed = false;
+int expandedCell = -1; // Which cell is currently expanded (-1 = none)
+int hoveredLetter = -1; // Which letter is being hovered in expanded view
+float holdStartTime = 0;
+float holdThreshold = 150; // ms to hold before expanding
 
 void setup()
 {
@@ -76,8 +80,7 @@ void draw()
   {
     fill(128);
     textAlign(CENTER);
-    text("Tap keys multiple times to cycle through letters!", width/2, 150);
-    text("Cell stays green while active", width/2, 170);
+    text("Tap to multi-tap OR hold & drag to select letter!", width/2, 150);
     
     if (mousePressed && !wasPressed)
     {
@@ -106,71 +109,192 @@ void draw()
       tapCount = 0;
     }
     
-    // Draw 3x3 grid
     float startX = width/2 - sizeOfInputArea/2;
     float startY = height/2 - sizeOfInputArea/2;
     float cellSize = sizeOfInputArea / 3;
     
-    for (int row = 0; row < 3; row++)
+    // Check if we should expand a cell (holding for threshold time)
+    if (mousePressed && expandedCell == -1)
     {
-      for (int col = 0; col < 3; col++)
+      if (millis() - holdStartTime > holdThreshold)
       {
-        int index = row * 3 + col;
-        float x = startX + col * cellSize;
-        float y = startY + row * cellSize;
-        
-        // Highlight currently active key in green
-        if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout)
-          fill(100, 255, 100);
-        else if (index == 8) // Bottom right is special (space/delete)
-          fill(255, 220, 150);
-        else if ((row + col) % 2 == 0)
-          fill(200);
-        else
-          fill(230);
-        
-        rect(x, y, cellSize, cellSize);
-        
-        // Draw border
-        stroke(80);
-        strokeWeight(2);
-        noFill();
-        rect(x, y, cellSize, cellSize);
-        noStroke();
-        
-        // Draw all letters in the cell
-        fill(0);
-        textAlign(CENTER, CENTER);
-        
-        if (index < 8)
+        // Find which cell is being held
+        if (mouseX >= startX && mouseX < startX + sizeOfInputArea &&
+            mouseY >= startY && mouseY < startY + sizeOfInputArea)
         {
-          // Draw letters larger and spread out
-          textSize(16);
-          text(gridLabels[index], x + cellSize/2, y + cellSize/2);
-        }
-        else
-        {
-          // Special cell - Space/Delete
-          textSize(10);
-          text("SPACE", x + cellSize/2, y + cellSize/2 - 8);
-          text("DELETE", x + cellSize/2, y + cellSize/2 + 8);
-        }
-        
-        // Show currently selected letter if this key is active
-        if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout && index < 8)
-        {
-          String chars = gridKeys[index];
-          char currentChar = chars.charAt(tapCount % chars.length());
-          fill(255, 0, 0);
-          textSize(28);
-          text(String(currentChar).toUpperCase(), x + cellSize/2, y + cellSize/2);
+          int col = int((mouseX - startX) / cellSize);
+          int row = int((mouseY - startY) / cellSize);
+          expandedCell = row * 3 + col;
         }
       }
     }
     
+    // Draw expanded view if a cell is expanded
+    if (expandedCell >= 0 && mousePressed)
+    {
+      // Draw semi-transparent overlay
+      fill(0, 0, 0, 150);
+      rect(startX, startY, sizeOfInputArea, sizeOfInputArea);
+      
+      // Draw expanded cell content
+      if (expandedCell == 8)
+      {
+        // Space/Delete cell - split into two halves
+        fill(180, 220, 255);
+        rect(startX, startY, sizeOfInputArea/2, sizeOfInputArea);
+        fill(255, 180, 180);
+        rect(startX + sizeOfInputArea/2, startY, sizeOfInputArea/2, sizeOfInputArea);
+        
+        // Check which half is hovered
+        if (mouseX < startX + sizeOfInputArea/2)
+        {
+          hoveredLetter = 0; // Space
+          fill(100, 200, 255, 100);
+          rect(startX, startY, sizeOfInputArea/2, sizeOfInputArea);
+        }
+        else
+        {
+          hoveredLetter = 1; // Delete
+          fill(255, 100, 100, 100);
+          rect(startX + sizeOfInputArea/2, startY, sizeOfInputArea/2, sizeOfInputArea);
+        }
+        
+        // Draw labels
+        fill(0);
+        textAlign(CENTER, CENTER);
+        textSize(24);
+        text("SPACE", startX + sizeOfInputArea/4, startY + sizeOfInputArea/2);
+        text("DELETE", startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/2);
+      }
+      else
+      {
+        // Letter cell - arrange letters in a grid
+        String chars = gridKeys[expandedCell];
+        int numChars = chars.length();
+        int cols = (numChars == 4) ? 2 : (numChars == 3) ? 3 : numChars;
+        int rows = (numChars == 4) ? 2 : 1;
+        
+        float letterWidth = sizeOfInputArea / cols;
+        float letterHeight = sizeOfInputArea / rows;
+        
+        hoveredLetter = -1;
+        
+        for (int i = 0; i < numChars; i++)
+        {
+          int col = i % cols;
+          int row = i / cols;
+          float x = startX + col * letterWidth;
+          float y = startY + row * letterHeight;
+          
+          // Draw letter box
+          fill(200, 220, 255);
+          rect(x, y, letterWidth, letterHeight);
+          
+          // Highlight if hovered
+          if (mouseX >= x && mouseX < x + letterWidth &&
+              mouseY >= y && mouseY < y + letterHeight)
+          {
+            hoveredLetter = i;
+            fill(100, 255, 100, 150);
+            rect(x, y, letterWidth, letterHeight);
+          }
+          
+          // Draw border
+          stroke(80);
+          strokeWeight(3);
+          noFill();
+          rect(x, y, letterWidth, letterHeight);
+          noStroke();
+          
+          // Draw letter
+          fill(0);
+          textAlign(CENTER, CENTER);
+          textSize(40);
+          text(String(chars.charAt(i)).toUpperCase(), x + letterWidth/2, y + letterHeight/2);
+        }
+      }
+    }
+    else
+    {
+      // Draw normal 3x3 grid
+      for (int row = 0; row < 3; row++)
+      {
+        for (int col = 0; col < 3; col++)
+        {
+          int index = row * 3 + col;
+          float x = startX + col * cellSize;
+          float y = startY + row * cellSize;
+          
+          // Highlight currently active key in green
+          if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout)
+            fill(100, 255, 100);
+          else if (index == 8) // Bottom right is special (space/delete)
+            fill(255, 220, 150);
+          else if ((row + col) % 2 == 0)
+            fill(200);
+          else
+            fill(230);
+          
+          rect(x, y, cellSize, cellSize);
+          
+          // Draw border
+          stroke(80);
+          strokeWeight(2);
+          noFill();
+          rect(x, y, cellSize, cellSize);
+          noStroke();
+          
+          // Draw all letters in the cell
+          fill(0);
+          textAlign(CENTER, CENTER);
+          
+          if (index < 8)
+          {
+            // Check if this is a 4-letter cell and make it more visible
+            String chars = gridKeys[index];
+            if (chars.length() == 4)
+            {
+              // 4-letter cells - use smaller font and different color
+              textSize(13);
+              fill(0, 0, 200); // Blue to make it stand out
+            }
+            else
+            {
+              textSize(16);
+              fill(0);
+            }
+            text(gridLabels[index], x + cellSize/2, y + cellSize/2);
+          }
+          else
+          {
+            // Special cell - Space/Delete
+            textSize(9);
+            text("SPACE", x + cellSize/2, y + cellSize/2 - 8);
+            text("DELETE", x + cellSize/2, y + cellSize/2 + 8);
+          }
+          
+          // Show currently selected letter if this key is active
+          if (index == lastKeyPressed && millis() - lastTapTime < tapTimeout && index < 8)
+          {
+            String chars = gridKeys[index];
+            char currentChar = chars.charAt(tapCount % chars.length());
+            fill(255, 0, 0);
+            textSize(28);
+            text(String(currentChar).toUpperCase(), x + cellSize/2, y + cellSize/2);
+          }
+        }
+      }
+    }
+    
+    // Handle touch state changes
     if (mousePressed && !wasPressed)
     {
-      handleClick();
+      holdStartTime = millis();
+      handleTouchStart();
+    }
+    else if (!mousePressed && wasPressed)
+    {
+      handleTouchEnd();
     }
   }
   
@@ -180,6 +304,68 @@ void draw()
 boolean didMouseClick(float x, float y, float w, float h)
 {
   return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h);
+}
+
+void handleTouchStart()
+{
+  // Just record the start time for hold detection
+  // The actual expansion happens in draw() after threshold
+}
+
+void handleTouchEnd()
+{
+  float startX = width/2 - sizeOfInputArea/2;
+  float startY = height/2 - sizeOfInputArea/2;
+  float cellSize = sizeOfInputArea / 3;
+  
+  // Check if we released in expanded view
+  if (expandedCell >= 0)
+  {
+    if (hoveredLetter >= 0)
+    {
+      if (expandedCell == 8)
+      {
+        // Space/Delete cell
+        if (hoveredLetter == 0)
+        {
+          currentTyped += " ";
+        }
+        else
+        {
+          if (currentTyped.length() > 0)
+            currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+        }
+      }
+      else
+      {
+        // Letter cell
+        String chars = gridKeys[expandedCell];
+        if (hoveredLetter < chars.length())
+        {
+          currentTyped += chars.charAt(hoveredLetter);
+        }
+      }
+    }
+    
+    expandedCell = -1;
+    hoveredLetter = -1;
+    lastKeyPressed = -1;
+    tapCount = 0;
+  }
+  else
+  {
+    // Quick tap - use multi-tap mode
+    handleClick();
+  }
+  
+  // Check next button
+  if (didMouseClick(600, 600, 200, 200))
+  {
+    nextTrial();
+    lastKeyPressed = -1;
+    tapCount = 0;
+    expandedCell = -1;
+  }
 }
 
 void handleClick()
