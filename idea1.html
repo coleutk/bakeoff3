@@ -24,9 +24,11 @@ String currentPhrase = "";
 String currentTyped = "";
 
 //Idea 1 Variables: Circular Pie Menu with 9 sections
-String[] sections = {"abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "vwx", "yz "};
+String[] sections = {"abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "vwx", "yz"};
 int selectedSection = -1;
+int hoveredLetter = -1;
 boolean wasPressed = false;
+float holdStartTime = 0;
 
 void setup()
 {
@@ -72,7 +74,8 @@ void draw()
   {
     fill(128);
     textAlign(CENTER);
-    text("Click to start time!", 280, 150);
+    text("Tap and hold pie sections to see letters!", width/2, 150);
+    text("Tap center for SPACE or DELETE", width/2, 170);
     
     if (mousePressed && !wasPressed)
     {
@@ -105,8 +108,10 @@ void draw()
       float angle1 = i * TWO_PI / 9 - PI/2;
       float angle2 = (i + 1) * TWO_PI / 9 - PI/2;
       
-      // Alternate colors for visibility
-      if (i % 2 == 0)
+      // Highlight selected section
+      if (i == selectedSection && mousePressed)
+        fill(100, 255, 100);
+      else if (i % 2 == 0)
         fill(100, 150, 255);
       else
         fill(150, 200, 255);
@@ -124,29 +129,100 @@ void draw()
       text(sections[i], labelX, labelY);
     }
     
-    // Center circle for delete
-    fill(255, 100, 100);
-    ellipse(centerX, centerY, sizeOfInputArea/4, sizeOfInputArea/4);
-    fill(255);
+    // Center circle for space/delete
+    fill(255, 200, 100);
+    ellipse(centerX, centerY, sizeOfInputArea/3.5, sizeOfInputArea/3.5);
+    fill(0);
     textAlign(CENTER, CENTER);
-    textSize(10);
-    text("DEL", centerX, centerY);
+    textSize(9);
+    text("SPACE", centerX, centerY - 8);
+    text("DELETE", centerX, centerY + 8);
     
+    // Show letter options when holding down in a section
+    if (mousePressed && selectedSection >= 0 && selectedSection < 9)
+    {
+      String chars = sections[selectedSection];
+      
+      // Calculate which letter is being hovered based on distance from center
+      float dx = mouseX - centerX;
+      float dy = mouseY - centerY;
+      float distance = sqrt(dx*dx + dy*dy);
+      
+      // Map distance to letter index
+      float innerRadius = sizeOfInputArea/3.5/2;
+      float outerRadius = radius;
+      
+      if (distance > innerRadius && distance < outerRadius)
+      {
+        float normalizedDist = (distance - innerRadius) / (outerRadius - innerRadius);
+        hoveredLetter = int(normalizedDist * chars.length());
+        if (hoveredLetter >= chars.length()) hoveredLetter = chars.length() - 1;
+        
+        // Draw letter options along the radius
+        float angle1 = selectedSection * TWO_PI / 9 - PI/2;
+        float angle2 = (selectedSection + 1) * TWO_PI / 9 - PI/2;
+        float midAngle = (angle1 + angle2) / 2;
+        
+        for (int j = 0; j < chars.length(); j++)
+        {
+          float letterDist = innerRadius + (outerRadius - innerRadius) * (j + 0.5) / chars.length();
+          float letterX = centerX + cos(midAngle) * letterDist;
+          float letterY = centerY + sin(midAngle) * letterDist;
+          
+          if (j == hoveredLetter)
+          {
+            fill(255, 255, 0);
+            ellipse(letterX, letterY, 20, 20);
+          }
+          
+          fill(0);
+          textAlign(CENTER, CENTER);
+          textSize(14);
+          text(String(chars.charAt(j)).toUpperCase(), letterX, letterY);
+        }
+      }
+    }
+    
+    // Handle touch state changes
     if (mousePressed && !wasPressed)
     {
-      handleClick();
+      // Touch started
+      float dx = mouseX - centerX;
+      float dy = mouseY - centerY;
+      float distance = sqrt(dx*dx + dy*dy);
+      
+      if (distance < radius && distance > sizeOfInputArea/3.5/2)
+      {
+        float angle = atan2(dy, dx) + PI/2;
+        if (angle < 0) angle += TWO_PI;
+        
+        int section = int(angle / (TWO_PI / 9));
+        if (section >= 0 && section < 9)
+        {
+          selectedSection = section;
+          hoveredLetter = 0;
+        }
+      }
+    }
+    else if (!mousePressed && wasPressed)
+    {
+      // Touch ended
+      handleRelease();
+    }
+    
+    // Check next button
+    if (!mousePressed && wasPressed && didMouseClick(600, 600, 200, 200))
+    {
+      nextTrial();
+      selectedSection = -1;
+      hoveredLetter = -1;
     }
   }
   
   wasPressed = mousePressed;
 }
 
-boolean didMouseClick(float x, float y, float w, float h)
-{
-  return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h);
-}
-
-void handleClick()
+void handleRelease()
 {
   float centerX = width/2;
   float centerY = height/2;
@@ -155,58 +231,38 @@ void handleClick()
   float distance = sqrt(dx*dx + dy*dy);
   float radius = sizeOfInputArea/2;
   
-  // Check if click is in input area
   if (distance < radius)
   {
-    // Check if click is in center delete button
-    if (distance < sizeOfInputArea/8)
+    // Released in center - space or delete
+    if (distance < sizeOfInputArea/3.5/2)
     {
       if (currentTyped.length() > 0)
-        currentTyped = currentTyped.substring(0, currentTyped.length()-1);
-    }
-    else
-    {
-      // Determine which section was clicked
-      float angle = atan2(dy, dx) + PI/2;
-      if (angle < 0) angle += TWO_PI;
-      
-      int section = int(angle / (TWO_PI / 9));
-      if (section >= 0 && section < 9)
       {
-        if (selectedSection == section)
-        {
-          // Second click on same section - cycle through letters
-          String chars = sections[section];
-          if (currentTyped.length() > 0)
-          {
-            char lastChar = currentTyped.charAt(currentTyped.length()-1);
-            int idx = chars.indexOf(lastChar);
-            if (idx >= 0 && idx < chars.length()-1)
-            {
-              currentTyped = currentTyped.substring(0, currentTyped.length()-1);
-              currentTyped += chars.charAt(idx+1);
-            }
-          }
-          else
-          {
-            currentTyped += chars.charAt(0);
-          }
-        }
-        else
-        {
-          // First click on this section - add first letter
-          selectedSection = section;
-          currentTyped += sections[section].charAt(0);
-        }
+        currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+      }
+      else
+      {
+        currentTyped += " ";
+      }
+    }
+    // Released in a section with a letter selected
+    else if (selectedSection >= 0 && hoveredLetter >= 0)
+    {
+      String chars = sections[selectedSection];
+      if (hoveredLetter < chars.length())
+      {
+        currentTyped += chars.charAt(hoveredLetter);
       }
     }
   }
   
-  if (didMouseClick(600, 600, 200, 200))
-  {
-    nextTrial();
-    selectedSection = -1;
-  }
+  selectedSection = -1;
+  hoveredLetter = -1;
+}
+
+boolean didMouseClick(float x, float y, float w, float h)
+{
+  return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h);
 }
 
 void nextTrial()

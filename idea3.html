@@ -5,7 +5,7 @@
 </head>
 <body>
 
-<h1>Bakeoff 3 - Idea 2: Mini QWERTY Keyboard</h1>
+<h1>Bakeoff 3 - Idea 3: Swipe Direction Input</h1>
 
 <script type="text/processing" data-processing-target="mycanvas">
 
@@ -23,18 +23,21 @@ float errorsTotal = 0;
 String currentPhrase = "";
 String currentTyped = "";
 
-// Idea 2 Variables: Mini QWERTY keyboard layout
-String[][] keyboard = {
-  {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p"},
-  {"a", "s", "d", "f", "g", "h", "j", "k", "l"},
-  {"z", "x", "c", "v", "b", "n", "m"}
-};
+// Idea 3 Variables: Swipe-based input
+// 8 directions + tap center = 9 letter groups
+String[] directionKeys = {"abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "vwx", "yz "};
+String[] directionNames = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖", "○"};
+float swipeStartX = 0;
+float swipeStartY = 0;
+boolean isSwiping = false;
+int selectedGroup = -1;
+int letterIndex = 0;
+float selectionTime = 0;
 boolean wasPressed = false;
 
 void setup()
 {
   size(800, 800);
-  noStroke();
   
   for (int i=0; i<phrases.length; i++)
   {
@@ -55,7 +58,7 @@ void draw()
     textAlign(CENTER);
     text("Trials complete!",400,200);
     text("Total time taken: " + (finishTime - startTime),400,220);
-    text("Total letters entered: " + lettersEnteredTotal,400,240);
+    text("Total letters entered: " + lettersEnteredTotal),400,240);
     text("Total letters expected: " + lettersExpectedTotal,400,260);
     text("Total errors entered: " + errorsTotal,400,280);
     float wpm = (lettersEnteredTotal/5.0f)/((finishTime - startTime)/60000f);
@@ -69,13 +72,15 @@ void draw()
   }
   
   fill(100);
+  noStroke();
   rect(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2, sizeOfInputArea, sizeOfInputArea);
   
   if (startTime==0)
   {
     fill(128);
     textAlign(CENTER);
-    text("Tap letters to type!", width/2, 150);
+    text("Swipe in different directions!", width/2, 150);
+    text("Quick tap center for space/delete", width/2, 170);
     
     if (mousePressed && !wasPressed)
     {
@@ -97,137 +102,193 @@ void draw()
     fill(255);
     text("NEXT > ", 650, 650);
     
-    // Draw mini QWERTY keyboard
-    float startX = width/2 - sizeOfInputArea/2;
-    float startY = height/2 - sizeOfInputArea/2;
+    float centerX = width/2;
+    float centerY = height/2;
+    float radius = sizeOfInputArea/2;
     
-    // Calculate key sizes - 4 rows total
-    float keyHeight = sizeOfInputArea / 5; // 5 rows: 3 letter rows + space + delete
-    
-    // Draw letter rows
-    for (int row = 0; row < 3; row++)
+    // Draw 8 directional wedges
+    for (int i = 0; i < 8; i++)
     {
-      int numKeys = keyboard[row].length;
-      float keyWidth = sizeOfInputArea / numKeys;
-      float rowStartX = startX;
+      float angle1 = i * TWO_PI / 8 - PI/2 - PI/8;
+      float angle2 = (i + 1) * TWO_PI / 8 - PI/2 - PI/8;
       
-      if (row == 1) rowStartX = startX + keyWidth/4; // Offset middle row slightly
-      if (row == 2) rowStartX = startX + keyWidth/2; // Offset bottom row more
+      if (i == selectedGroup)
+        fill(100, 255, 100, 150);
+      else if (i % 2 == 0)
+        fill(150, 180, 255, 150);
+      else
+        fill(180, 200, 255, 150);
       
-      for (int col = 0; col < numKeys; col++)
+      stroke(80);
+      strokeWeight(1);
+      arc(centerX, centerY, sizeOfInputArea, sizeOfInputArea, angle1, angle2, PIE);
+      
+      // Draw letter group
+      float labelAngle = (angle1 + angle2) / 2;
+      float labelX = centerX + cos(labelAngle) * radius * 0.65;
+      float labelY = centerY + sin(labelAngle) * radius * 0.65;
+      fill(0);
+      textAlign(CENTER, CENTER);
+      textSize(11);
+      text(directionKeys[i], labelX, labelY);
+    }
+    
+    // Center circle for space/delete
+    noStroke();
+    fill(255, 200, 100);
+    ellipse(centerX, centerY, sizeOfInputArea/3, sizeOfInputArea/3);
+    fill(0);
+    textAlign(CENTER, CENTER);
+    textSize(10);
+    text("SPC", centerX, centerY - 8);
+    text("DEL", centerX, centerY + 8);
+    
+    // Show currently selected letter if in selection mode
+    if (selectedGroup >= 0 && selectedGroup < 8)
+    {
+      String chars = directionKeys[selectedGroup];
+      if (letterIndex < chars.length())
       {
-        float x = rowStartX + col * keyWidth;
-        float y = startY + row * keyHeight;
-        
-        // Draw key background
-        fill(220);
-        stroke(80);
-        strokeWeight(1);
-        rect(x, y, keyWidth-2, keyHeight-2);
-        
-        // Draw letter
-        fill(0);
-        noStroke();
-        textAlign(CENTER, CENTER);
-        textSize(9);
-        text(keyboard[row][col].toUpperCase(), x + keyWidth/2, y + keyHeight/2);
+        fill(0, 200, 0);
+        textSize(40);
+        text(String(chars.charAt(letterIndex)).toUpperCase(), centerX, centerY - radius - 30);
       }
     }
     
-    // Draw SPACE button (4th row)
-    float spaceY = startY + 3 * keyHeight;
-    fill(180, 220, 255);
-    stroke(80);
-    strokeWeight(1);
-    rect(startX, spaceY, sizeOfInputArea * 0.6, keyHeight-2);
-    fill(0);
-    noStroke();
-    textAlign(CENTER, CENTER);
-    textSize(10);
-    text("SPACE", startX + sizeOfInputArea * 0.3, spaceY + keyHeight/2);
-    
-    // Draw DELETE button (4th row, right side)
-    fill(255, 180, 180);
-    stroke(80);
-    strokeWeight(1);
-    rect(startX + sizeOfInputArea * 0.6, spaceY, sizeOfInputArea * 0.4, keyHeight-2);
-    fill(0);
-    noStroke();
-    text("DEL", startX + sizeOfInputArea * 0.8, spaceY + keyHeight/2);
-    
+    // Handle swipe visualization
+    if (isSwiping)
+    {
+      stroke(255, 0, 0);
+      strokeWeight(3);
+      line(swipeStartX, swipeStartY, mouseX, mouseY);
+    }
+  }
+  
+  // Handle input without relying on mousePressed() function
+  if (startTime != 0)
+  {
     if (mousePressed && !wasPressed)
     {
-      handleClick();
+      handleTouchStart();
+    }
+    else if (!mousePressed && wasPressed)
+    {
+      handleTouchEnd();
+    }
+    else if (mousePressed && wasPressed)
+    {
+      handleTouchMove();
     }
   }
   
   wasPressed = mousePressed;
 }
 
-boolean didMouseClick(float x, float y, float w, float h)
+void handleTouchStart()
 {
-  return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h);
-}
-
-void handleClick()
-{
-  float startX = width/2 - sizeOfInputArea/2;
-  float startY = height/2 - sizeOfInputArea/2;
-  float keyHeight = sizeOfInputArea / 5;
+  float centerX = width/2;
+  float centerY = height/2;
+  float dx = mouseX - centerX;
+  float dy = mouseY - centerY;
+  float distance = sqrt(dx*dx + dy*dy);
   
-  // Check which key was clicked
-  if (mouseX >= startX && mouseX < startX + sizeOfInputArea &&
-      mouseY >= startY && mouseY < startY + sizeOfInputArea)
+  if (distance < sizeOfInputArea/2)
   {
-    // Check letter rows (first 3 rows)
-    for (int row = 0; row < 3; row++)
-    {
-      int numKeys = keyboard[row].length;
-      float keyWidth = sizeOfInputArea / numKeys;
-      float rowStartX = startX;
-      
-      if (row == 1) rowStartX = startX + keyWidth/4;
-      if (row == 2) rowStartX = startX + keyWidth/2;
-      
-      float y = startY + row * keyHeight;
-      
-      if (mouseY >= y && mouseY < y + keyHeight)
-      {
-        for (int col = 0; col < numKeys; col++)
-        {
-          float x = rowStartX + col * keyWidth;
-          if (mouseX >= x && mouseX < x + keyWidth)
-          {
-            currentTyped += keyboard[row][col];
-            return;
-          }
-        }
-      }
-    }
-    
-    // Check SPACE and DELETE buttons (4th row)
-    float spaceY = startY + 3 * keyHeight;
-    if (mouseY >= spaceY && mouseY < spaceY + keyHeight)
-    {
-      // Space button (left 60%)
-      if (mouseX < startX + sizeOfInputArea * 0.6)
-      {
-        currentTyped += " ";
-      }
-      // Delete button (right 40%)
-      else
-      {
-        if (currentTyped.length() > 0)
-          currentTyped = currentTyped.substring(0, currentTyped.length()-1);
-      }
-      return;
-    }
+    swipeStartX = mouseX;
+    swipeStartY = mouseY;
+    isSwiping = true;
+    selectedGroup = -1;
+    letterIndex = 0;
   }
   
-  if (didMouseClick(600, 600, 200, 200))
+  // Check next button
+  if (mouseX >= 600 && mouseX < 800 && mouseY >= 600 && mouseY < 800)
   {
     nextTrial();
   }
+}
+
+void handleTouchMove()
+{
+  if (isSwiping)
+  {
+    float centerX = width/2;
+    float centerY = height/2;
+    float dx = mouseX - centerX;
+    float dy = mouseY - centerY;
+    float distance = sqrt(dx*dx + dy*dy);
+    
+    // If swiped far enough, determine direction
+    if (distance > sizeOfInputArea/8)
+    {
+      float angle = atan2(dy, dx);
+      if (angle < 0) angle += TWO_PI;
+      
+      // Determine which of 8 directions
+      int direction = int((angle + PI/8) / (TWO_PI / 8)) % 8;
+      
+      if (direction != selectedGroup)
+      {
+        selectedGroup = direction;
+        letterIndex = 0;
+        selectionTime = millis();
+      }
+      else
+      {
+        // Same direction - check if should cycle to next letter
+        if (millis() - selectionTime > 300)
+        {
+          String chars = directionKeys[selectedGroup];
+          letterIndex = (letterIndex + 1) % chars.length();
+          selectionTime = millis();
+        }
+      }
+    }
+  }
+}
+
+void handleTouchEnd()
+{
+  if (isSwiping)
+  {
+    float centerX = width/2;
+    float centerY = height/2;
+    float dx = mouseX - centerX;
+    float dy = mouseY - centerY;
+    float distance = sqrt(dx*dx + dy*dy);
+    
+    // Check if it was a tap in center (space/delete)
+    if (distance < sizeOfInputArea/6)
+    {
+      // Quick tap = space, or delete if shift
+      if (currentTyped.length() > 0 && selectedGroup < 0)
+      {
+        currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+      }
+      else if (selectedGroup < 0)
+      {
+        currentTyped += " ";
+      }
+    }
+    else if (selectedGroup >= 0 && selectedGroup < 8)
+    {
+      // Add the selected letter
+      String chars = directionKeys[selectedGroup];
+      if (letterIndex < chars.length())
+      {
+        currentTyped += chars.charAt(letterIndex);
+      }
+    }
+    
+    isSwiping = false;
+    selectedGroup = -1;
+    letterIndex = 0;
+  }
+}
+
+boolean didMouseClick(float x, float y, float w, float h)
+{
+  return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h);
 }
 
 void nextTrial()
