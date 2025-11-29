@@ -5,7 +5,7 @@
 </head>
 <body>
 
-<h1>Bakeoff 3 - Idea 3: Swipe Direction Input</h1>
+<h1>Bakeoff 3 - Idea 4: 3x3 Hold-Drag (Version 2)</h1>
 
 <script type="text/processing" data-processing-target="mycanvas">
 
@@ -23,21 +23,23 @@ float errorsTotal = 0;
 String currentPhrase = "";
 String currentTyped = "";
 
-// Idea 3 Variables: Swipe-based input
-// 8 directions + tap center = 9 letter groups
-String[] directionKeys = {"abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "vwx", "yz "};
-String[] directionNames = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖", "○"};
-float swipeStartX = 0;
-float swipeStartY = 0;
-boolean isSwiping = false;
-int selectedGroup = -1;
-int letterIndex = 0;
-float selectionTime = 0;
+// Idea 4 Variables - slightly worse than idea2
+String[] gridKeys = {"abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz", " "};
+String[] gridLabels = {"ABC", "DEF", "GHI", "JKL", "MNO", "PQRS", "TUV", "WXYZ", "SP/DEL"};
+int lastKeyPressed = -1;
+int tapCount = 0;
+float lastTapTime = 0;
+float tapTimeout = 800;
 boolean wasPressed = false;
+int expandedCell = -1;
+int hoveredLetter = -1;
+float holdStartTime = 0;
+float holdThreshold = 250; // WORSE: Longer hold time (was 150ms)
 
 void setup()
 {
   size(800, 800);
+  noStroke();
   
   for (int i=0; i<phrases.length; i++)
   {
@@ -58,7 +60,7 @@ void draw()
     textAlign(CENTER);
     text("Trials complete!",400,200);
     text("Total time taken: " + (finishTime - startTime),400,220);
-    text("Total letters entered: " + lettersEnteredTotal),400,240);
+    text("Total letters entered: " + lettersEnteredTotal,400,240);
     text("Total letters expected: " + lettersExpectedTotal,400,260);
     text("Total errors entered: " + errorsTotal,400,280);
     float wpm = (lettersEnteredTotal/5.0f)/((finishTime - startTime)/60000f);
@@ -72,15 +74,13 @@ void draw()
   }
   
   fill(100);
-  noStroke();
   rect(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2, sizeOfInputArea, sizeOfInputArea);
   
   if (startTime==0)
   {
     fill(128);
     textAlign(CENTER);
-    text("Swipe in different directions!", width/2, 150);
-    text("Quick tap center for space/delete", width/2, 170);
+    text("Hold & drag to select letters!", width/2, 150);
     
     if (mousePressed && !wasPressed)
     {
@@ -102,193 +102,248 @@ void draw()
     fill(255);
     text("NEXT > ", 650, 650);
     
-    float centerX = width/2;
-    float centerY = height/2;
-    float radius = sizeOfInputArea/2;
-    
-    // Draw 8 directional wedges
-    for (int i = 0; i < 8; i++)
+    if (millis() - lastTapTime > tapTimeout && lastKeyPressed != -1)
     {
-      float angle1 = i * TWO_PI / 8 - PI/2 - PI/8;
-      float angle2 = (i + 1) * TWO_PI / 8 - PI/2 - PI/8;
-      
-      if (i == selectedGroup)
-        fill(100, 255, 100, 150);
-      else if (i % 2 == 0)
-        fill(150, 180, 255, 150);
-      else
-        fill(180, 200, 255, 150);
-      
-      stroke(80);
-      strokeWeight(1);
-      arc(centerX, centerY, sizeOfInputArea, sizeOfInputArea, angle1, angle2, PIE);
-      
-      // Draw letter group
-      float labelAngle = (angle1 + angle2) / 2;
-      float labelX = centerX + cos(labelAngle) * radius * 0.65;
-      float labelY = centerY + sin(labelAngle) * radius * 0.65;
-      fill(0);
-      textAlign(CENTER, CENTER);
-      textSize(11);
-      text(directionKeys[i], labelX, labelY);
+      lastKeyPressed = -1;
+      tapCount = 0;
     }
     
-    // Center circle for space/delete
-    noStroke();
-    fill(255, 200, 100);
-    ellipse(centerX, centerY, sizeOfInputArea/3, sizeOfInputArea/3);
-    fill(0);
-    textAlign(CENTER, CENTER);
-    textSize(10);
-    text("SPC", centerX, centerY - 8);
-    text("DEL", centerX, centerY + 8);
+    float startX = width/2 - sizeOfInputArea/2;
+    float startY = height/2 - sizeOfInputArea/2;
+    float cellSize = sizeOfInputArea / 3;
     
-    // Show currently selected letter if in selection mode
-    if (selectedGroup >= 0 && selectedGroup < 8)
+    if (mousePressed && expandedCell == -1)
     {
-      String chars = directionKeys[selectedGroup];
-      if (letterIndex < chars.length())
+      if (millis() - holdStartTime > holdThreshold)
       {
-        fill(0, 200, 0);
-        textSize(40);
-        text(String(chars.charAt(letterIndex)).toUpperCase(), centerX, centerY - radius - 30);
+        if (mouseX >= startX && mouseX < startX + sizeOfInputArea &&
+            mouseY >= startY && mouseY < startY + sizeOfInputArea)
+        {
+          int col = int((mouseX - startX) / cellSize);
+          int row = int((mouseY - startY) / cellSize);
+          expandedCell = row * 3 + col;
+        }
       }
     }
     
-    // Handle swipe visualization
-    if (isSwiping)
+    // Draw expanded view
+    if (expandedCell >= 0 && mousePressed)
     {
-      stroke(255, 0, 0);
-      strokeWeight(3);
-      line(swipeStartX, swipeStartY, mouseX, mouseY);
+      fill(0, 0, 0, 100); // WORSE: Less contrast overlay
+      rect(startX, startY, sizeOfInputArea, sizeOfInputArea);
+      
+      if (expandedCell == 8)
+      {
+        // WORSE: Less distinct colors
+        fill(200, 200, 220);
+        rect(startX, startY, sizeOfInputArea/2, sizeOfInputArea);
+        fill(220, 200, 200);
+        rect(startX + sizeOfInputArea/2, startY, sizeOfInputArea/2, sizeOfInputArea);
+        
+        if (mouseX < startX + sizeOfInputArea/2)
+        {
+          hoveredLetter = 0;
+          fill(150, 150, 200, 80); // WORSE: Less visible highlight
+          rect(startX, startY, sizeOfInputArea/2, sizeOfInputArea);
+        }
+        else
+        {
+          hoveredLetter = 1;
+          fill(200, 150, 150, 80);
+          rect(startX + sizeOfInputArea/2, startY, sizeOfInputArea/2, sizeOfInputArea);
+        }
+        
+        fill(0);
+        textAlign(CENTER, CENTER);
+        textSize(12); // WORSE: Smaller text
+        text("SPACE", startX + sizeOfInputArea/4, startY + sizeOfInputArea/2);
+        text("DELETE", startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/2);
+      }
+      else
+      {
+        String chars = gridKeys[expandedCell];
+        int numChars = chars.length();
+        
+        float[][] positions;
+        if (numChars == 3)
+        {
+          positions = new float[][] {
+            {startX + sizeOfInputArea/4, startY + sizeOfInputArea/4},
+            {startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/4},
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea*3/4}
+          };
+        }
+        else if (numChars == 4)
+        {
+          positions = new float[][] {
+            {startX + sizeOfInputArea/4, startY + sizeOfInputArea/4},
+            {startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/4},
+            {startX + sizeOfInputArea/4, startY + sizeOfInputArea*3/4},
+            {startX + sizeOfInputArea*3/4, startY + sizeOfInputArea*3/4}
+          };
+        }
+        else
+        {
+          positions = new float[][] {
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea/4},
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea*3/4}
+          };
+        }
+        
+        hoveredLetter = -1;
+        float hitRadius = sizeOfInputArea/5; // WORSE: Smaller hit area
+        
+        for (int i = 0; i < numChars; i++)
+        {
+          float posX = positions[i][0];
+          float posY = positions[i][1];
+          
+          float dx = mouseX - posX;
+          float dy = mouseY - posY;
+          float distance = sqrt(dx*dx + dy*dy);
+          
+          boolean isHovered = distance < hitRadius;
+          
+          if (isHovered)
+          {
+            hoveredLetter = i;
+            fill(150, 200, 150, 120); // WORSE: Less bright highlight
+            ellipse(posX, posY, hitRadius*1.6, hitRadius*1.6);
+          }
+          
+          fill(200, 200, 220); // WORSE: Less colorful
+          ellipse(posX, posY, hitRadius*1.3, hitRadius*1.3);
+          
+          stroke(60);
+          strokeWeight(2); // WORSE: Thinner border
+          noFill();
+          ellipse(posX, posY, hitRadius*1.3, hitRadius*1.3);
+          noStroke();
+          
+          fill(0);
+          textAlign(CENTER, CENTER);
+          textSize(28); // WORSE: Smaller letters
+          text(String(chars.charAt(i)).toUpperCase(), posX, posY);
+        }
+      }
     }
-  }
-  
-  // Handle input without relying on mousePressed() function
-  if (startTime != 0)
-  {
+    else
+    {
+      // Draw normal 3x3 grid
+      for (int row = 0; row < 3; row++)
+      {
+        for (int col = 0; col < 3; col++)
+        {
+          int index = row * 3 + col;
+          float x = startX + col * cellSize;
+          float y = startY + row * cellSize;
+          
+          // WORSE: All same gray color
+          fill(210);
+          
+          rect(x, y, cellSize, cellSize);
+          
+          stroke(100); // WORSE: Lighter borders
+          strokeWeight(1);
+          noFill();
+          rect(x, y, cellSize, cellSize);
+          noStroke();
+          
+          fill(0);
+          textAlign(CENTER, CENTER);
+          
+          if (index < 8)
+          {
+            String chars = gridKeys[index];
+            textSize(14); // WORSE: Same size for all
+            text(gridLabels[index], x + cellSize/2, y + cellSize/2);
+          }
+          else
+          {
+            textSize(8);
+            text("SPACE", x + cellSize/2, y + cellSize/2 - 8);
+            text("DELETE", x + cellSize/2, y + cellSize/2 + 8);
+          }
+        }
+      }
+    }
+    
     if (mousePressed && !wasPressed)
     {
+      holdStartTime = millis();
       handleTouchStart();
     }
     else if (!mousePressed && wasPressed)
     {
       handleTouchEnd();
     }
-    else if (mousePressed && wasPressed)
-    {
-      handleTouchMove();
-    }
   }
   
   wasPressed = mousePressed;
 }
 
-void handleTouchStart()
+boolean didMouseClick(float x, float y, float w, float h)
 {
-  float centerX = width/2;
-  float centerY = height/2;
-  float dx = mouseX - centerX;
-  float dy = mouseY - centerY;
-  float distance = sqrt(dx*dx + dy*dy);
-  
-  if (distance < sizeOfInputArea/2)
-  {
-    swipeStartX = mouseX;
-    swipeStartY = mouseY;
-    isSwiping = true;
-    selectedGroup = -1;
-    letterIndex = 0;
-  }
-  
-  // Check next button
-  if (mouseX >= 600 && mouseX < 800 && mouseY >= 600 && mouseY < 800)
-  {
-    nextTrial();
-  }
+  return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h);
 }
 
-void handleTouchMove()
+void handleTouchStart()
 {
-  if (isSwiping)
-  {
-    float centerX = width/2;
-    float centerY = height/2;
-    float dx = mouseX - centerX;
-    float dy = mouseY - centerY;
-    float distance = sqrt(dx*dx + dy*dy);
-    
-    // If swiped far enough, determine direction
-    if (distance > sizeOfInputArea/8)
-    {
-      float angle = atan2(dy, dx);
-      if (angle < 0) angle += TWO_PI;
-      
-      // Determine which of 8 directions
-      int direction = int((angle + PI/8) / (TWO_PI / 8)) % 8;
-      
-      if (direction != selectedGroup)
-      {
-        selectedGroup = direction;
-        letterIndex = 0;
-        selectionTime = millis();
-      }
-      else
-      {
-        // Same direction - check if should cycle to next letter
-        if (millis() - selectionTime > 300)
-        {
-          String chars = directionKeys[selectedGroup];
-          letterIndex = (letterIndex + 1) % chars.length();
-          selectionTime = millis();
-        }
-      }
-    }
-  }
 }
 
 void handleTouchEnd()
 {
-  if (isSwiping)
+  float startX = width/2 - sizeOfInputArea/2;
+  float startY = height/2 - sizeOfInputArea/2;
+  float cellSize = sizeOfInputArea / 3;
+  
+  if (expandedCell >= 0)
   {
-    float centerX = width/2;
-    float centerY = height/2;
-    float dx = mouseX - centerX;
-    float dy = mouseY - centerY;
-    float distance = sqrt(dx*dx + dy*dy);
-    
-    // Check if it was a tap in center (space/delete)
-    if (distance < sizeOfInputArea/6)
+    if (hoveredLetter >= 0)
     {
-      // Quick tap = space, or delete if shift
-      if (currentTyped.length() > 0 && selectedGroup < 0)
+      if (expandedCell == 8)
       {
-        currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+        if (hoveredLetter == 0)
+        {
+          currentTyped += " ";
+        }
+        else
+        {
+          if (currentTyped.length() > 0)
+            currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+        }
       }
-      else if (selectedGroup < 0)
+      else
       {
-        currentTyped += " ";
-      }
-    }
-    else if (selectedGroup >= 0 && selectedGroup < 8)
-    {
-      // Add the selected letter
-      String chars = directionKeys[selectedGroup];
-      if (letterIndex < chars.length())
-      {
-        currentTyped += chars.charAt(letterIndex);
+        String chars = gridKeys[expandedCell];
+        if (hoveredLetter < chars.length())
+        {
+          currentTyped += chars.charAt(hoveredLetter);
+        }
       }
     }
     
-    isSwiping = false;
-    selectedGroup = -1;
-    letterIndex = 0;
+    expandedCell = -1;
+    hoveredLetter = -1;
+  }
+  
+  if (didMouseClick(600, 600, 200, 200))
+  {
+    nextTrial();
+    lastKeyPressed = -1;
+    tapCount = 0;
+    expandedCell = -1;
   }
 }
 
-boolean didMouseClick(float x, float y, float w, float h)
+void handleClick()
 {
-  return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h);
+  if (didMouseClick(600, 600, 200, 200))
+  {
+    nextTrial();
+    lastKeyPressed = -1;
+    tapCount = 0;
+  }
 }
 
 void nextTrial()
