@@ -154,26 +154,30 @@ void draw()
         String chars = gridKeys[expandedCell];
         int numChars = chars.length();
         
-        // WORST: Only show 2 letters at a time, arranged vertically in center
+        // Show all letters properly arranged
         float[][] positions;
         if (numChars == 3)
         {
-          // Show only first 2 letters
+          // 3 letters: vertically aligned in center
           positions = new float[][] {
-            {startX + sizeOfInputArea/2, startY + sizeOfInputArea/3},
-            {startX + sizeOfInputArea/2, startY + sizeOfInputArea*2/3}
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea/4},
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea/2},
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea*3/4}
           };
         }
         else if (numChars == 4)
         {
-          // Show only first 2 letters
+          // 4 letters: plus formation (top, right, bottom, left)
           positions = new float[][] {
-            {startX + sizeOfInputArea/2, startY + sizeOfInputArea/3},
-            {startX + sizeOfInputArea/2, startY + sizeOfInputArea*2/3}
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea/4},      // top
+            {startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/2},    // right
+            {startX + sizeOfInputArea/2, startY + sizeOfInputArea*3/4},    // bottom
+            {startX + sizeOfInputArea/4, startY + sizeOfInputArea/2}       // left
           };
         }
         else
         {
+          // 2 letters: vertically aligned
           positions = new float[][] {
             {startX + sizeOfInputArea/2, startY + sizeOfInputArea/3},
             {startX + sizeOfInputArea/2, startY + sizeOfInputArea*2/3}
@@ -183,8 +187,7 @@ void draw()
         hoveredLetter = -1;
         float hitRadius = sizeOfInputArea/6; // WORST: Very small hit area
         
-        int displayCount = min(2, numChars); // Only show 2 letters max
-        for (int i = 0; i < displayCount; i++)
+        for (int i = 0; i < numChars; i++)
         {
           float posX = positions[i][0];
           float posY = positions[i][1];
@@ -297,8 +300,7 @@ void handleTouchEnd()
       else
       {
         String chars = gridKeys[expandedCell];
-        // WORST: Can only select first 2 letters
-        if (hoveredLetter < 2 && hoveredLetter < chars.length())
+        if (hoveredLetter < chars.length())
         {
           currentTyped += chars.charAt(hoveredLetter);
         }
