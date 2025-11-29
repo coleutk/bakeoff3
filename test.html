@@ -163,7 +163,7 @@ void draw()
         // Draw labels - smaller text
         fill(0);
         textAlign(CENTER, CENTER);
-        textSize(14);
+        textSize(47); // 14 * 3.345 = 47
         text("SPACE", startX + sizeOfInputArea/2, startY + sizeOfInputArea/4);
         text("DELETE", startX + sizeOfInputArea/2, startY + sizeOfInputArea*3/4);
       }
@@ -232,7 +232,7 @@ void draw()
           
           // Draw border
           stroke(80);
-          strokeWeight(3);
+          strokeWeight(10); // 3 * 3.345 = 10
           noFill();
           ellipse(posX, posY, hitRadius*1.5, hitRadius*1.5);
           noStroke();
@@ -240,7 +240,7 @@ void draw()
           // Draw letter
           fill(0);
           textAlign(CENTER, CENTER);
-          textSize(35);
+          textSize(117); // 35 * 3.345 = 117
           text(String(chars.charAt(i)).toUpperCase(), posX, posY);
         }
         
@@ -254,7 +254,7 @@ void draw()
           
           // Draw border
           stroke(0);
-          strokeWeight(3);
+          strokeWeight(10); // 3 * 3.345 = 10
           noFill();
           rect(startX + sizeOfInputArea/2 - previewSize/2, startY + 5, previewSize, previewSize/1.5);
           noStroke();
@@ -262,7 +262,7 @@ void draw()
           // Draw the selected letter LARGE
           fill(0);
           textAlign(CENTER, CENTER);
-          textSize(45);
+          textSize(150); // 45 * 3.345 = 150
           text(String(chars.charAt(hoveredLetter)).toUpperCase(), 
                startX + sizeOfInputArea/2, 
                startY + 5 + previewSize/3);
@@ -277,14 +277,14 @@ void draw()
         rect(startX + sizeOfInputArea/2 - previewSize/2, startY + 5, previewSize, previewSize/1.5);
         
         stroke(0);
-        strokeWeight(3);
+        strokeWeight(10); // 3 * 3.345 = 10
         noFill();
         rect(startX + sizeOfInputArea/2 - previewSize/2, startY + 5, previewSize, previewSize/1.5);
         noStroke();
         
         fill(0);
         textAlign(CENTER, CENTER);
-        textSize(20);
+        textSize(67); // 20 * 3.345 = 67
         if (hoveredLetter == 0)
           text("SPACE", startX + sizeOfInputArea/2, startY + 5 + previewSize/3);
         else
@@ -314,7 +314,7 @@ void draw()
           
           // Draw border
           stroke(80);
-          strokeWeight(2);
+          strokeWeight(7); // 2 * 3.345 = 7
           noFill();
           rect(x, y, cellSize, cellSize);
           noStroke();
@@ -330,12 +330,12 @@ void draw()
             if (chars.length() == 4)
             {
               // 4-letter cells - use smaller font and different color
-              textSize(11);
+              textSize(37); // 11 * 3.345 = 37
               fill(0, 0, 200); // Blue to make it stand out
             }
             else
             {
-              textSize(16);
+              textSize(54); // 16 * 3.345 = 54
               fill(0);
             }
             text(gridLabels[index], x + cellSize/2, y + cellSize/2);
@@ -343,9 +343,9 @@ void draw()
           else
           {
             // Special cell - Space/Delete
-            textSize(9);
-            text("SPACE", x + cellSize/2, y + cellSize/2 - 8);
-            text("DELETE", x + cellSize/2, y + cellSize/2 + 8);
+            textSize(30); // 9 * 3.345 = 30
+            text("SPACE", x + cellSize/2, y + cellSize/2 - 27); // 8 * 3.345 = 27
+            text("DELETE", x + cellSize/2, y + cellSize/2 + 27);
           }
         }
       }
