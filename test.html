@@ -9,7 +9,7 @@
 
 <script type="text/processing" data-processing-target="mycanvas">
 
-final int DPIofYourDeviceScreen = 460;
+final int DPIofYourDeviceScreen = 368; // Adjusted for actual 1" on iPhone 16 Pro
 final float sizeOfInputArea = DPIofYourDeviceScreen*1;
 
 int totalTrialNum = 2;
@@ -91,9 +91,10 @@ void draw()
   if (startTime!=0)
   {
     textAlign(LEFT);
-    fill(128);
+    fill(0); // Black text
+    textSize(24); // Larger text
     text("Phrase " + (currTrialNum+1) + " of " + totalTrialNum, 70, 50);
-    fill(128);
+    fill(0); // Black text
     text("Target:   " + currentPhrase, 70, 100);
     text("Entered:  " + currentTyped + "|", 70, 140);
     
