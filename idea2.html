@@ -139,32 +139,32 @@ void draw()
       // Draw expanded cell content
       if (expandedCell == 8)
       {
-        // Space/Delete cell - split into two halves
+        // Space/Delete cell - split into top and bottom halves
         fill(180, 220, 255);
-        rect(startX, startY, sizeOfInputArea/2, sizeOfInputArea);
+        rect(startX, startY, sizeOfInputArea, sizeOfInputArea/2);
         fill(255, 180, 180);
-        rect(startX + sizeOfInputArea/2, startY, sizeOfInputArea/2, sizeOfInputArea);
+        rect(startX, startY + sizeOfInputArea/2, sizeOfInputArea, sizeOfInputArea/2);
         
         // Check which half is hovered
-        if (mouseX < startX + sizeOfInputArea/2)
+        if (mouseY < startY + sizeOfInputArea/2)
         {
           hoveredLetter = 0; // Space
           fill(100, 200, 255, 100);
-          rect(startX, startY, sizeOfInputArea/2, sizeOfInputArea);
+          rect(startX, startY, sizeOfInputArea, sizeOfInputArea/2);
         }
         else
         {
           hoveredLetter = 1; // Delete
           fill(255, 100, 100, 100);
-          rect(startX + sizeOfInputArea/2, startY, sizeOfInputArea/2, sizeOfInputArea);
+          rect(startX, startY + sizeOfInputArea/2, sizeOfInputArea, sizeOfInputArea/2);
         }
         
         // Draw labels - smaller text
         fill(0);
         textAlign(CENTER, CENTER);
         textSize(14);
-        text("SPACE", startX + sizeOfInputArea/4, startY + sizeOfInputArea/2);
-        text("DELETE", startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/2);
+        text("SPACE", startX + sizeOfInputArea/2, startY + sizeOfInputArea/4);
+        text("DELETE", startX + sizeOfInputArea/2, startY + sizeOfInputArea*3/4);
       }
       else
       {

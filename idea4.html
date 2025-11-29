@@ -255,7 +255,14 @@ void draw()
           if (index < 8)
           {
             String chars = gridKeys[index];
-            textSize(14); // WORSE: Same size for all
+            if (chars.length() == 4)
+            {
+              textSize(11); // Smaller for 4-letter cells
+            }
+            else
+            {
+              textSize(14);
+            }
             text(gridLabels[index], x + cellSize/2, y + cellSize/2);
           }
           else
