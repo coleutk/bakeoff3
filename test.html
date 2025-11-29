@@ -243,52 +243,6 @@ void draw()
           textSize(117); // 35 * 3.345 = 117
           text(String(chars.charAt(i)).toUpperCase(), posX, posY);
         }
-        
-        // IMPROVEMENT: Show preview of selected letter at top center of square (visible despite thumb)
-        if (hoveredLetter >= 0 && hoveredLetter < chars.length())
-        {
-          // Draw preview box at top center
-          fill(255, 255, 100, 220);
-          float previewSize = sizeOfInputArea/3;
-          rect(startX + sizeOfInputArea/2 - previewSize/2, startY + 5, previewSize, previewSize/1.5);
-          
-          // Draw border
-          stroke(0);
-          strokeWeight(10); // 3 * 3.345 = 10
-          noFill();
-          rect(startX + sizeOfInputArea/2 - previewSize/2, startY + 5, previewSize, previewSize/1.5);
-          noStroke();
-          
-          // Draw the selected letter LARGE
-          fill(0);
-          textAlign(CENTER, CENTER);
-          textSize(150); // 45 * 3.345 = 150
-          text(String(chars.charAt(hoveredLetter)).toUpperCase(), 
-               startX + sizeOfInputArea/2, 
-               startY + 5 + previewSize/3);
-        }
-      }
-      
-      // IMPROVEMENT: Show preview for space/delete selection
-      if (expandedCell == 8 && hoveredLetter >= 0)
-      {
-        fill(255, 255, 100, 220);
-        float previewSize = sizeOfInputArea/3;
-        rect(startX + sizeOfInputArea/2 - previewSize/2, startY + 5, previewSize, previewSize/1.5);
-        
-        stroke(0);
-        strokeWeight(10); // 3 * 3.345 = 10
-        noFill();
-        rect(startX + sizeOfInputArea/2 - previewSize/2, startY + 5, previewSize, previewSize/1.5);
-        noStroke();
-        
-        fill(0);
-        textAlign(CENTER, CENTER);
-        textSize(67); // 20 * 3.345 = 67
-        if (hoveredLetter == 0)
-          text("SPACE", startX + sizeOfInputArea/2, startY + 5 + previewSize/3);
-        else
-          text("DELETE", startX + sizeOfInputArea/2, startY + 5 + previewSize/3);
       }
     }
     else
@@ -335,7 +289,7 @@ void draw()
             }
             else
             {
-              textSize(54); // 16 * 3.345 = 54
+              textSize(50); // Reduced from 54 to fit better
               fill(0);
             }
             text(gridLabels[index], x + cellSize/2, y + cellSize/2);
