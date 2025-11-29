@@ -9,7 +9,7 @@
 
 <script type="text/processing" data-processing-target="mycanvas">
 
-final int DPIofYourDeviceScreen = 110;
+final int DPIofYourDeviceScreen = 368; // Adjusted for actual 1" on iPhone 16 Pro
 final float sizeOfInputArea = DPIofYourDeviceScreen*1;
 
 int totalTrialNum = 2;
@@ -87,9 +87,10 @@ void draw()
   if (startTime!=0)
   {
     textAlign(LEFT);
-    fill(128);
+    fill(0); // Black text
+    textSize(24); // Larger text
     text("Phrase " + (currTrialNum+1) + " of " + totalTrialNum, 70, 50);
-    fill(128);
+    fill(0); // Black text
     text("Target:   " + currentPhrase, 70, 100);
     text("Entered:  " + currentTyped + "|", 70, 140);
     
@@ -127,7 +128,7 @@ void draw()
       
       // Draw black separating lines
       stroke(0);
-      strokeWeight(2);
+      strokeWeight(7); // 2 * 3.345 = 7
       line(centerX, centerY, 
            centerX + cos(angle1) * radius, 
            centerY + sin(angle1) * radius);
@@ -139,7 +140,7 @@ void draw()
       float labelY = centerY + sin(labelAngle) * radius * 0.6;
       fill(0);
       textAlign(CENTER, CENTER);
-      textSize(10);
+      textSize(33); // 10 * 3.345 = 33
       text(sections[i], labelX, labelY);
     }
     
@@ -149,13 +150,13 @@ void draw()
     
     // Draw a line to separate space and delete visually
     stroke(0);
-    strokeWeight(2);
+    strokeWeight(7); // 2 * 3.345 = 7
     line(centerX, centerY - sizeOfInputArea/5, centerX, centerY + sizeOfInputArea/5);
     noStroke();
     
     fill(0);
     textAlign(CENTER, CENTER);
-    textSize(16);
+    textSize(54); // 16 * 3.345 = 54
     text("S", centerX - sizeOfInputArea/10, centerY);
     text("D", centerX + sizeOfInputArea/10, centerY);
     

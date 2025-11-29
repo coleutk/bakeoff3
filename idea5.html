@@ -9,7 +9,7 @@
 
 <script type="text/processing" data-processing-target="mycanvas">
 
-final int DPIofYourDeviceScreen = 110;
+final int DPIofYourDeviceScreen = 368; // Adjusted for actual 1" on iPhone 16 Pro
 final float sizeOfInputArea = DPIofYourDeviceScreen*1;
 
 int totalTrialNum = 2;
@@ -87,9 +87,10 @@ void draw()
   if (startTime!=0)
   {
     textAlign(LEFT);
-    fill(128);
+    fill(0); // Black text
+    textSize(24); // Larger text
     text("Phrase " + (currTrialNum+1) + " of " + totalTrialNum, 70, 50);
-    fill(128);
+    fill(0); // Black text
     text("Target:   " + currentPhrase, 70, 100);
     text("Entered:  " + currentTyped + "|", 70, 140);
     
@@ -145,7 +146,7 @@ void draw()
         
         fill(0);
         textAlign(CENTER, CENTER);
-        textSize(10); // WORST: Very small text
+        textSize(33); // 10 * 3.345 = 33 (WORST: Very small text)
         text("SP", startX + sizeOfInputArea/4, startY + sizeOfInputArea/2);
         text("DEL", startX + sizeOfInputArea*3/4, startY + sizeOfInputArea/2);
       }
@@ -209,14 +210,14 @@ void draw()
           ellipse(posX, posY, hitRadius*1.2, hitRadius*1.2);
           
           stroke(80);
-          strokeWeight(1); // WORST: Very thin border
+          strokeWeight(3); // 1 * 3.345 = 3 (WORST: Very thin border)
           noFill();
           ellipse(posX, posY, hitRadius*1.2, hitRadius*1.2);
           noStroke();
           
           fill(0);
           textAlign(CENTER, CENTER);
-          textSize(22); // WORST: Small letters
+          textSize(74); // 22 * 3.345 = 74 (WORST: Small letters)
           text(String(chars.charAt(i)).toUpperCase(), posX, posY);
         }
       }
@@ -238,7 +239,7 @@ void draw()
           rect(x, y, cellSize, cellSize);
           
           stroke(120); // WORST: Very light borders
-          strokeWeight(1);
+          strokeWeight(3); // 1 * 3.345 = 3
           noFill();
           rect(x, y, cellSize, cellSize);
           noStroke();
@@ -248,14 +249,14 @@ void draw()
           
           if (index < 8)
           {
-            textSize(12); // WORST: Small text for all
+            textSize(40); // 12 * 3.345 = 40 (WORST: Small text for all)
             text(gridLabels[index], x + cellSize/2, y + cellSize/2);
           }
           else
           {
-            textSize(7); // WORST: Tiny text
-            text("SP", x + cellSize/2, y + cellSize/2 - 6);
-            text("DEL", x + cellSize/2, y + cellSize/2 + 6);
+            textSize(23); // 7 * 3.345 = 23 (WORST: Tiny text)
+            text("SP", x + cellSize/2, y + cellSize/2 - 20); // 6 * 3.345 = 20
+            text("DEL", x + cellSize/2, y + cellSize/2 + 20);
           }
         }
       }
