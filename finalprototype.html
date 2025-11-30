@@ -5,7 +5,7 @@
 </head>
 <body>
 
-<h1>Bakeoff 3 - TEST: 3x3 with Preview</h1>
+<h1>Bakeoff 3</h1>
 
 <script type="text/processing" data-processing-target="mycanvas">
 
@@ -133,7 +133,7 @@ void draw()
       }
     }
     
-    // Draw expanded view if a cell is expanded
+    // draw expanded view if a cell is expanded
     if (expandedCell >= 0 && mousePressed)
     {
       fill(0, 0, 0, 150);
@@ -244,7 +244,6 @@ void draw()
           float x = startX + col * cellSize;
           float y = startY + row * cellSize;
           
-          // Light gray cells
           if (index == 8)
           {
             fill(255, 220, 150);
@@ -352,7 +351,6 @@ void handleTouchEnd()
     hoveredLetter = -1;
   }
   
-  // Check next button
   if (didMouseClick(600, 600, 200, 200))
   {
     nextTrial();
